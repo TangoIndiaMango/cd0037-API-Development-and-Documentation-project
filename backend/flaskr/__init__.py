@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import random
 from random import randrange
+import json
 
 from models import setup_db, Question, Category
 
@@ -245,42 +246,46 @@ def create_app(test_config=None):
         #request.get_json()
         previous_questions = data.get('previous_questions')
         category = data.get('category')
-        
-        
-        if not category:
+
+
+        if not category or previous_questions:
                 return jsonify(
                     {
                         "success": False,
                         "error": 400,
                     }
                 )
-        else:
-            try:
-                if category["id"] == 0:
-                    all_questions = Question.query.all()
+        
+        try:
+            if category["id"] == 0:
+                all_questions = Question.query.all()
                     #filter_by(category=category['id']).all()()
-                    formatted_questions = [question.format() for question in all_questions]
-                else:
-                    all_questions = Question.query.filter_by(Question.category==category['id']).all()
-                    formatted_questions = [question.format() for question in all_questions]
+                formatted_questions = [question.format() for question in all_questions]
+                    
+                    #json.dump(formatted_questions)
+
+            else:
+                all_questions = Question.query.filter_by(Question.category==category['id']).all()
+                formatted_questions = [question.format() for question in all_questions]
+                #Question.query.filter(Question.category.in_(previous_questions)).all(
+                    
+                    
 
 
+            rand_question = random.choice(formatted_questions).format() if formatted_questions else None
 
-                rand_question = random.choice(formatted_questions).format() if questions else None
+            for question in formatted_questions:
+                if question['id'] not in previous_questions:
+                    questions = formatted_questions[rand_question]
 
-                for question in formatted_questions:
-                    if question['id'] not in previous_questions:
-                        questions = formatted_questions[rand_question]
-
-                    return jsonify(
+                return jsonify(
                     {
                     "success": True,
                     "question": questions,
                     "previous questions": previous_questions
                 })
-            except:
-                    abort(404)
-            
+        except:
+            abort(404)
 
 
     """
